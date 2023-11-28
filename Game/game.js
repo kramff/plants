@@ -1613,7 +1613,7 @@ let setupNetworkConnection = () => {
 		}
 		else {
 			wsProtocol = "ws://";
-			socketURL = (location.protocol + "//" + location.host + "/").replace(/\d+\/$/, "8099").replace("http://", wsProtocol);
+			socketURL = (location.protocol + "//" + location.host + "/").replace(/\d+\/$/, "8077").replace("http://", wsProtocol);
 		}
 		socket = new WebSocket(socketURL);
 		socket.onopen = (data) => {
