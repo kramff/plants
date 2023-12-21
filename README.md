@@ -30,20 +30,42 @@ More complicated weapons might have attacks that reduce the bar, do more damage 
 The plant breeding system should be interesting and deep, but simple enough to use for beginners.
 Ideally any plant could cross breed with any other plant, so you could get the traits of both combined in an interesting way.
 I would like to have these categories of things be plants:
-- Weapons: Vine whip, wooden sword, pea shooter, thorn dagger
-- Armor
-- Misc. Equipment: Tools to help move around the dungeon, or interact with plants, or whatever else
-- Consumable Items: Healing potions and food, items to help grow plants grow better and faster, combat items
-- Enemies
-- Bosses, so you could breed a more powerful boss to defeat and get better rewards from defeating it
-- Critters that may help or interfere with your plans. I would like to see "plant bees" that help pollinate other plants for you.
-- New section of the dungeon
+- Weapons: vine whip, wooden sword, pea shooter, thorn dagger
+- Armor: 
+- Equipment: Tools to help move around the dungeon, or interact with plants, or whatever else
+- Consumable Items: Healing potions and food, items to help grow plants better and faster, combat items
+- Monsters: grow your own enemies for whatever reason. Maybe you want a certain trait from an enemy you encounter, or you can try to breed a monster that helps you instead of hurting you.
+- Bosses: you could breed a more powerful boss to battle and get better rewards from defeating it
+- Critters: may help or harm you. I would like to see "bees" that help pollinate other plants for you.
+- Locations: new sections of the dungeon to explore and potentially move your base to.
 
-Aside from how they can directly help you with their products, I would also like to include other interesting traits for plants to have.
-- Seed dispersal: drift on wind, drop in fruit, attach to players or enemies, etc
-- Style and appearance: should be mostly related to gameplay traits but not necessarily
-- How they affect soil quality: consider planting crops that improve quality before planting the ones that need high quality
+Plants should have a semi-realistic growing system, where they need sunlight, soil nutrients, and water in order to reach their full potential.
 
+Cross breeding: make a pseudo-genetics system. Various genes can be on or off.
+A group of genes can come together to create a weighted value that determines if the trait is expressed or not, and to what degree.
+For example maybe there would be 10 genes that determine how high a plant grows.
+If they are all off, the plant would be tiny, and if they are all on, the plant would be huge.
+Cross breeding these two plants would result in a plant with some of the 10 genes turned on and some turned off.
+This would cause the child plant to be somewhere in the middle of the two sizes.
+Resulting size could be something like `# of active growth genes * 1 meter`, but maybe the different genes have somewhat different effects.
+
+Plant size and other traits shouldn't just be "okay it got enough sunlight, nutrients, and water so it grows to the calculated size".
+Instead it should be more of a dynamic system where the calculated trait value influence how it chooses to spend resources.
+
+Could do dominant and recessive genes.
+
+All the plants in this dungeon are considered the same species and have access to the same set of genes, to allow for crossbreeding.
+While I think occasional random mutation would be interesting, it would have to be unlikely to cause game-breaking results.
+
+Some potential traits:
+- Roots: How wide do the roots spread? What kind of nutrients is it good at drawing from the soil? How much water does it pull? Any special properties of the roots?
+- Body: How sturdy is the stem/trunk? How tall does it try to grow (assuming it gets enough nutrients / energy)? Any special properties? Suitable as building material, as a weapon, other uses? Thorns? Sap?
+- Branches: How many branches does it try to make? How long are the branches?
+- Leaves: How big are the leaves? What shape are they? How dense or spare are they? What color? Are the leaves useful in some way?
+- Flowers: What color? What shape? 
+- Seeds: How are they dispersed (wind, fruit, ride critters)? Are the seeds useful as ammo, food, or anything else?
+- Fruit: Edible? Effects when eaten? How large? Color, shape?
+- Other products: Plants in this game can create a large variety of other products, like weapons, equipment, monsters, critters, and new areas. I haven't fully thought out how cross breeding plants that make different products would work but it should make sense and be satisfying to figure out.
 
 I would like to have the "funny cascading failure" vibe that you get from Spelunky.
 - Enemies that get vastly stronger upon defeating a player
@@ -102,11 +124,11 @@ In Game/
 
 Then, copy the Game/models/ folder into Game/dist/
 
-- [ ] TODO: make that happen automatically
+- [ ] TODO: Have that happen automatically
 
 The Game/dist/ folder is what should be put into the web server
 
-- [ ] TODO: make that transfer easier so I don't have to fiddle with dragging files around so much.
+- [ ] TODO: Make that transfer easier so I don't have to fiddle with dragging files around so much.
 
 ---
 
