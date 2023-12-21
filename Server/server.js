@@ -1,4 +1,4 @@
-console.log("Starting alchemy game server");
+console.log("Starting Plants game server");
 
 const WebSocket = require("ws");
 const wss = new WebSocket.Server({port: 8077});
@@ -207,6 +207,7 @@ Room.prototype.RemoveSelf = function () {
 }
 
 process.on('SIGINT', function() {
-	console.log("Stopping alchemy game server");
+	console.log("Stopping Plants game server");
 	process.exit();
 });
+

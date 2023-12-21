@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-console.log("alchemist game");
+console.log("Plants game");
 
 
 let showDebug = true;
@@ -568,14 +568,14 @@ let init = () => {
 	setupNetworkConnection();
 
 	nicknameInput = document.getElementById("nickname");
-	let savedNickname = localStorage.getItem("alchemist__nickname");
+	let savedNickname = localStorage.getItem("plants_game__nickname");
 	if (!!savedNickname) {
 		nickname = savedNickname;
 		nicknameInput.value = nickname;
 	}
 	nicknameInput.oninput = (e) => {
 		nickname = nicknameInput.value;
-		localStorage.setItem("alchemist__nickname", nickname);
+		localStorage.setItem("plants_game__nickname", nickname);
 	}
 
 	makeRoomButton = document.getElementById("make_room");
@@ -1609,7 +1609,7 @@ let setupNetworkConnection = () => {
 		let socketURL;
 		if (location.href.indexOf("kramff.com") !== -1) {
 			wsProtocol = "wss://";
-			socketURL = wsProtocol + "bine.nfshost.com/alchemist/";
+			socketURL = wsProtocol + "bine.nfshost.com/plants/";
 		}
 		else {
 			wsProtocol = "ws://";
