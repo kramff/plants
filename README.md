@@ -30,14 +30,15 @@ More complicated weapons might have attacks that reduce the bar, do more damage 
 The plant breeding system should be interesting and deep, but simple enough to use for beginners.
 Ideally any plant could cross breed with any other plant, so you could get the traits of both combined in an interesting way.
 I would like to have these categories of things be plants:
-- Weapons: vine whip, wooden sword, pea shooter, thorn dagger
-- Armor: 
-- Equipment: Tools to help move around the dungeon, or interact with plants, or whatever else
+- Weapons: vine whip, wooden sword, pea shooter, thorn dagger. Wand and staff?
+- Armor: head, body, leg, shield, shoes
+- Equipment: Rake, hoe, shovel, watering can, pollen duster. Tools to help move around the dungeon, or interact with plants, or whatever else
 - Consumable Items: Healing potions and food, items to help grow plants better and faster, combat items
 - Monsters: grow your own enemies for whatever reason. Maybe you want a certain trait from an enemy you encounter, or you can try to breed a monster that helps you instead of hurting you.
 - Bosses: you could breed a more powerful boss to battle and get better rewards from defeating it
 - Critters: may help or harm you. I would like to see "bees" that help pollinate other plants for you.
 - Locations: new sections of the dungeon to explore and potentially move your base to.
+- Traps: dangerous when encountered in the wild, useful for defense at your base
 
 Plants should have a semi-realistic growing system, where they need sunlight, soil nutrients, and water in order to reach their full potential.
 
@@ -47,18 +48,21 @@ For example maybe there would be 10 genes that determine how high a plant grows.
 If they are all off, the plant would be tiny, and if they are all on, the plant would be huge.
 Cross breeding these two plants would result in a plant with some of the 10 genes turned on and some turned off.
 This would cause the child plant to be somewhere in the middle of the two sizes.
-Resulting size could be something like `# of active growth genes * 1 meter`, but maybe the different genes have somewhat different effects.
+Resulting size could be something like `(# of active growth genes) * (1 meter)`, but maybe the different genes have somewhat different effects.
 
 Plant size and other traits shouldn't just be "okay it got enough sunlight, nutrients, and water so it grows to the calculated size".
 Instead it should be more of a dynamic system where the calculated trait value influence how it chooses to spend resources.
 
-Could do dominant and recessive genes.
+Could do dominant and recessive genes. Punnett squares
 
 All the plants in this dungeon are considered the same species and have access to the same set of genes, to allow for crossbreeding.
-While I think occasional random mutation would be interesting, it would have to be unlikely to cause game-breaking results.
+
+While I think occasional random mutation would be interesting, it would have to be unlikely to cause game-breaking results. ("mutation" meaning neither a child plant's gene wasn't taken from either parent, but instead randomly decided)
+
+Can you take cuttings from a plant to grow a copy of it?
 
 Some potential traits:
-- Roots: How wide do the roots spread? What kind of nutrients is it good at drawing from the soil? How much water does it pull? Any special properties of the roots?
+- Roots: How wide do the roots spread? What kind of nutrients is it good at drawing from the soil? How much water does it pull? Any special properties of the roots? Can the plant spread through roots, bypassing the seed step?
 - Body: How sturdy is the stem/trunk? How tall does it try to grow (assuming it gets enough nutrients / energy)? Any special properties? Suitable as building material, as a weapon, other uses? Thorns? Sap?
 - Branches: How many branches does it try to make? How long are the branches?
 - Leaves: How big are the leaves? What shape are they? How dense or spare are they? What color? Are the leaves useful in some way?
@@ -66,6 +70,20 @@ Some potential traits:
 - Seeds: How are they dispersed (wind, fruit, ride critters)? Are the seeds useful as ammo, food, or anything else?
 - Fruit: Edible? Effects when eaten? How large? Color, shape?
 - Other products: Plants in this game can create a large variety of other products, like weapons, equipment, monsters, critters, and new areas. I haven't fully thought out how cross breeding plants that make different products would work but it should make sense and be satisfying to figure out.
+- Consider: Nuts, Bark, Bulbs
+- Carnivorous plants? Parasitic roots? Decomposer (fungus-like) plants?
+
+Also consider different biomes
+- Temperate
+- Wetland
+- Desert
+- Jungle
+- Tundra
+- Cave
+
+Some more types of plants to consider
+- Cactus
+- Moss
 
 I would like to have the "funny cascading failure" vibe that you get from Spelunky.
 - Enemies that get vastly stronger upon defeating a player
@@ -76,11 +94,13 @@ There should be some kind of mental tug of war between staying where you are and
 - Increasing rewards from growing better plants in a single spot
 
 There should be long-term strategy about the path you take through the dungeon, so there should be "hints" of some kind about what options are available coming up.
-- Scout for new locations in between enemy raids
+- Scout for new locations in between enemy raids, or breed a location plant yourself
+- Skill test for knowing what would be good to add to your build
 
 There should be "push your luck" mechanics where you can take on a large risk in hopes of getting a bigger reward.
 - Intentionally maximise the "power" of a boss that you yourself are growing (by using fertilizer, watering with hard-earned enemy blood, etc) so that you can get a bigger prize when you defeat it
 
+A really fun aspect of some roguelikes is the "busted combo" experience, I would like to have that here.
 
 Multiplayer: with rollback netcode there is probably a reasonable limit to the maximum player count but not sure what that is. The goal would be at least 4 players comfortably playing together, more than that would be great.
 
