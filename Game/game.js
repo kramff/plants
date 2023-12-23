@@ -80,6 +80,8 @@ let safeMaterialHighlight;
 let hitEffectGeometry;
 let hitEffectMaterial;
 
+let enemy1Material;
+
 let sceneLight;
 let sceneLight2;
 
@@ -90,6 +92,7 @@ let createGameState = () => {
 		itemList: [],
 		projectileList: [],
 		effectList: [],
+		enemyList: [],
 		frameCount: 0,
 	}
 }
@@ -102,6 +105,7 @@ let copyGameState = (gs) => {
 	copyGameObjectList(gsNew, gs.itemList, gsNew.itemList, createItem);
 	copyGameObjectList(gsNew, gs.projectileList, gsNew.projectileList, createProjectile);
 	copyGameObjectList(gsNew, gs.effectList, gsNew.effectList, createEffect);
+	copyGameObjectList(gsNew, gs.enemyList, gsNew.enemyList, createEnemy);
 	// Fix references - Change references from objects in old gamestate to objects in new gamestate
 	// player: heldItem
 	// appliance: heldItem
@@ -229,6 +233,18 @@ let compareGameStates = (gs1, gs2) => {
 	//gameState1.effectList.map((object, index) => {
 		//return true;
 	//}),
+	if (gs1.enemyList.length !== gs2.enemyList.length) {comparisons.push(`enemyList.length diff ${gs1.enemyList.length} !== ${gs2.enemyList.length}`);}
+	gs1.enemyList.map((object, index) => {
+		let matchingObject = gs2.enemyList[index];
+		let hasMatch = matchingObject !== undefined;
+		if (hasMatch) {
+			if (object.subType !== matchingObject.subType) {comparisons.push(`enemy.subType diff ${object.subType} !== ${matchingObject.subType}`);}
+			if (object.xPosition !== matchingObject.xPosition) {comparisons.push(`enemy.xPosition diff ${object.xPosition} !== ${matchingObject.xPosition}`);}
+			if (object.yPosition !== matchingObject.yPosition) {comparisons.push(`enemy.yPosition diff ${object.yPosition} !== ${matchingObject.yPosition}`);}
+			if (object.rotation !== matchingObject.rotation) {comparisons.push(`enemy.rotation diff ${object.rotation} !== ${matchingObject.rotation}`);}
+		}
+		else {comparisons.push(`enemy in gs1 has no match in gs2 at index ${index}`);}
+	});
 	comparisons = comparisons.flat(1);
 	// Any truthy value means there was a difference. (the truthy value would be a string)
 	let overallResult = comparisons.reduce((result, comparison) => {
@@ -262,6 +278,7 @@ let applianceMeshList = [];
 let itemMeshList = [];
 let projectileMeshList = [];
 let effectMeshList = [];
+let enemyMeshList = [];
 
 let createPlayer = (gs, name, id, team) => {
 	let newPlayer = {
@@ -473,7 +490,7 @@ let createEffect = (gs, effectType, xPosition, yPosition) => {
 		yPosition: yPosition || 0,
 		lifespan: 200,
 		toBeRemoved: false,
-	}
+	};
 	gs.effectList.push(newEffect);
 	return newEffect;
 }
@@ -488,6 +505,29 @@ let createEffectMesh = (effectObject) => {
 }
 let removeEffect = (gs, effectObject) => {
 	gs.effectList.splice(gs.effectList.indexOf(effectObject), 1);
+}
+
+let createEnemy = (gs, enemyType, xPosition, yPosition) => {
+	let newEnemy = {
+		type: "enemy",
+		subType: enemyType,
+		connectedMesh: undefined,
+		connectedOverlayObjects: {},
+		xPosition: xPosition || 0,
+		yPosition: yPosition || 0,
+		toBeRemoved: false,
+	};
+	gs.enemyList.push(newEnemy);
+	return newEnemy;
+}
+let createEnemyMesh = (enemyObject) => {
+	let newEnemyMesh;
+	if (enemyObject.subType === "enemy1") {
+		newEnemyMesh = new THREE.Mesh(cubeGeometry, enemy1Material);
+	}
+}
+let removeEnemy = (gs, enemyObject) => {
+	gs.enemyList.splice(gs.enemyList.indexOf(enemyObject), 1);
 }
 
 let wDown = false;
@@ -673,6 +713,7 @@ let init = () => {
 	//rockMaterial = new THREE.MeshToonMaterial({color: 0x994433});
 	safeMaterial = new THREE.MeshToonMaterial({color: 0x444444});
 	safeMaterialHighlight = new THREE.MeshToonMaterial({color: 0x555555});
+	enemy1Material = new THREE.MeshToonMaterial({color: 0x80c020});
 
 	// Single use meshes
 	floorMesh = new THREE.Mesh(planeGeometry, floorMaterial);
