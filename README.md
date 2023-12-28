@@ -42,6 +42,8 @@ I would like to have these categories of things be plants:
 
 Plants should have a semi-realistic growing system, where they need sunlight, soil nutrients, and water in order to reach their full potential.
 
+On the other hand, waiting sucks, so killing enemies should give you resources to speed up your plant growth. (Monster blood / ichor)
+
 Cross breeding: make a pseudo-genetics system. Various genes can be on or off.
 A group of genes can come together to create a weighted value that determines if the trait is expressed or not, and to what degree.
 For example maybe there would be 10 genes that determine how high a plant grows.

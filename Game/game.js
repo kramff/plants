@@ -81,6 +81,9 @@ let hitEffectGeometry;
 let hitEffectMaterial;
 
 let enemy1Material;
+let enemy1AttackMaterial;
+let enemy1StunnedMaterial;
+let enemy1AngryMaterial;
 
 let sceneLight;
 let sceneLight2;
@@ -451,6 +454,7 @@ let createProjectile = (gs, projectileType, xPosition, yPosition, rotation, spee
 		rotation: rotation || 0,
 		speed: speed || 0,
 		sourcePlayer: undefined,
+		sourceIsEnemy: false,
 		lifespan: 500,
 		toBeRemoved: false,
 	};
@@ -515,6 +519,21 @@ let createEnemy = (gs, enemyType, xPosition, yPosition) => {
 		connectedOverlayObjects: {},
 		xPosition: xPosition || 0,
 		yPosition: yPosition || 0,
+		xSpeed: 0,
+		ySpeed: 0,
+		rotation: 0,
+		xTarget: 0,
+		yTarget: 0,
+		health: 20,
+		maxHealth: 20,
+		state: "idle",
+		stateTimer: 0,
+		targetPlayer: undefined,
+		stagger: 0,
+		maxStagger: 10,
+		connectedMesh: undefined,
+		connectedOverlayObjects: {},
+		defeated: false,
 		toBeRemoved: false,
 	};
 	gs.enemyList.push(newEnemy);
@@ -525,6 +544,12 @@ let createEnemyMesh = (enemyObject) => {
 	if (enemyObject.subType === "enemy1") {
 		newEnemyMesh = new THREE.Mesh(cubeGeometry, enemy1Material);
 	}
+	else {
+		newEnemyMesh = new THREE.Mesh(cubeGeometry, enemy1Material);
+	}
+	scene.add(newEnemyMesh);
+	enemyMeshList.push(newEnemyMesh);
+	return newEnemyMesh;
 }
 let removeEnemy = (gs, enemyObject) => {
 	gs.enemyList.splice(gs.enemyList.indexOf(enemyObject), 1);
@@ -714,6 +739,9 @@ let init = () => {
 	safeMaterial = new THREE.MeshToonMaterial({color: 0x444444});
 	safeMaterialHighlight = new THREE.MeshToonMaterial({color: 0x555555});
 	enemy1Material = new THREE.MeshToonMaterial({color: 0x80c020});
+	enemy1AttackMaterial = new THREE.MeshToonMaterial({color: 0xa0d030});
+	enemy1StunnedMaterial = new THREE.MeshToonMaterial({color: 0xb0f850});
+	enemy1AngryMaterial = new THREE.MeshToonMaterial({color: 0xc0a030});
 
 	// Single use meshes
 	floorMesh = new THREE.Mesh(planeGeometry, floorMaterial);
@@ -747,10 +775,11 @@ let initializeGameState = (gs) => {
 	for (let i = 0; i < 6; i++) {
 		let newTable = createAppliance(gs, "table", i + 1, -3);
 	}
-	let safe1 = createAppliance(gs, "safe", -7, 0);
-	safe1.assignedTeam = 1;
-	let safe2 = createAppliance(gs, "safe", 7, 0);
-	safe2.assignedTeam = 2;
+	//let safe1 = createAppliance(gs, "safe", -7, 0);
+	//safe1.assignedTeam = 1;
+	//let safe2 = createAppliance(gs, "safe", 7, 0);
+	//safe2.assignedTeam = 2;
+	let newEnemy = createEnemy(gs, "enemy1", -2, -2);
 }
 
 let currentView = "entry";
@@ -1096,6 +1125,7 @@ let renderFrame = (gs) => {
 	createMissingMeshes(gs.itemList, createItemMesh);
 	createMissingMeshes(gs.projectileList, createProjectileMesh);
 	createMissingMeshes(gs.effectList, createEffectMesh);
+	createMissingMeshes(gs.enemyList, createEnemyMesh);
 	// Remove unused meshes
 	// Check that the connected object is in the game, and that the connected object is still actually connected
 	removeUnneededMeshes(playerMeshList, gs.playerList);
@@ -1103,6 +1133,7 @@ let renderFrame = (gs) => {
 	removeUnneededMeshes(itemMeshList, gs.itemList);
 	removeUnneededMeshes(projectileMeshList, gs.projectileList);
 	removeUnneededMeshes(effectMeshList, gs.effectList);
+	removeUnneededMeshes(enemyMeshList, gs.enemyList);
 	// Update rendering position, rotation, material, etc for all objects
 	gs.applianceList.forEach(applianceObject => {
 		let applianceMesh = applianceObject.connectedMesh;
@@ -1160,6 +1191,34 @@ let renderFrame = (gs) => {
 		effectMesh.scale.y = effectObject.lifespan / 500;
 		effectMesh.position.x = effectObject.xPosition;
 		effectMesh.position.y = effectObject.yPosition;
+	});
+	gs.enemyList.forEach(enemyObject => {
+		let enemyMesh = enemyObject.connectedMesh;
+		enemyMesh.position.x = enemyObject.xPosition;
+		enemyMesh.position.y = enemyObject.yPosition;
+		enemyMesh.rotation.z = enemyObject.rotation;
+		if (enemyObject.state === "defeat") {
+			enemyMesh.scale.x = ((61 - enemyObject.stateTimer) / 60);
+			enemyMesh.scale.y = ((61 - enemyObject.stateTimer) / 60);
+			enemyMesh.scale.z = ((61 - enemyObject.stateTimer) / 60);
+		}
+		else {
+			enemyMesh.scale.x = 1;
+			enemyMesh.scale.y = 1;
+			enemyMesh.scale.z = 1;
+		}
+		if (enemyObject.state === "attack") {
+			enemyMesh.material = enemy1AttackMaterial;
+		}
+		else if (enemyObject.state === "stunned") {
+			enemyMesh.material = enemy1StunnedMaterial;
+		}
+		else if (enemyObject.state === "angry") {
+			enemyMesh.material = enemy1AngryMaterial;
+		}
+		else {
+			enemyMesh.material = enemy1Material;
+		}
 	});
 	let localPlayer = getLocalPlayer(gs);
 	let localPlayerMesh = localPlayer.connectedMesh;
@@ -1498,6 +1557,106 @@ let gameLogic = (gs) => {
 			playerObject.releasedUse = true;
 		}
 	});
+	gs.enemyList.forEach(enemyObject => {
+		// Enemy states: idle, chase, attack, stunned, angry
+		if (enemyObject.state === "idle") {
+			enemyObject.stateTimer += 1;
+			if (enemyObject.stateTimer > 10) {
+				// Pick a player to chase
+				let potentialTargetPlayer = gs.playerList[Math.floor(deterministicRandom(gs) * gs.playerList.length)];
+				if (potentialTargetPlayer !== undefined) {
+					enemyObject.targetPlayer = potentialTargetPlayer;
+					enemyObject.state = "chase";
+					enemyObject.stateTimer = 0;
+				}
+			}
+		}
+		else if (enemyObject.state === "chase") {
+			let angleToTarget = Math.atan2(
+				enemyObject.targetPlayer.yPosition - enemyObject.yPosition,
+				enemyObject.targetPlayer.xPosition - enemyObject.xPosition
+			);
+			let xSpeedChange = Math.cos(angleToTarget) * 0.002;
+			let ySpeedChange = Math.sin(angleToTarget) * 0.002;
+			enemyObject.xSpeed += xSpeedChange;
+			enemyObject.ySpeed += ySpeedChange;
+			enemyObject.rotation = angleToTarget;
+			let xDist = Math.abs(enemyObject.targetPlayer.xPosition - enemyObject.xPosition);
+			let yDist = Math.abs(enemyObject.targetPlayer.yPosition - enemyObject.yPosition);
+			if (xDist < 2.5 && yDist < 2.5) {
+				enemyObject.state = "attack";
+				enemyObject.stateTimer = 0;
+			}
+		}
+		else if (enemyObject.state === "attack") {
+			enemyObject.stateTimer += 1;
+			if (enemyObject.stateTimer % 20 === 0) {
+				let projectileObject = createProjectile(gs, "swordSwing", enemyObject.xPosition, enemyObject.yPosition, enemyObject.rotation, 0.1);
+				projectileObject.sourceIsEnemy = true;
+			}
+			if (enemyObject.stateTimer > 62) {
+				enemyObject.state = "idle";
+				enemyObject.stateTimer = 0;
+			}
+		}
+		else if (enemyObject.state === "stunned") {
+			enemyObject.stateTimer += 1;
+			if (enemyObject.stateTimer > 90) {
+				enemyObject.state = "angry";
+				enemyObject.stateTimer = 0;
+				enemyObject.stagger = 0;
+			}
+		}
+		else if (enemyObject.state === "angry") {
+			enemyObject.stateTimer += 1;
+			enemyObject.stagger = 0;
+			if (enemyObject.stateTimer % 11 === 0) {
+				// Straight
+				let projectileObject1 = createProjectile(gs, "swordSwing", enemyObject.xPosition, enemyObject.yPosition, enemyObject.rotation, 0.1);
+				projectileObject1.sourceIsEnemy = true;
+				// Angled Left
+				let rotation2 = wrapRotationToPiBounds(enemyObject.rotation + 0.2);
+				let projectileObject2 = createProjectile(gs, "swordSwing", enemyObject.xPosition, enemyObject.yPosition, rotation2, 0.1);
+				projectileObject2.sourceIsEnemy = true;
+				// Angled Right
+				let rotation3 = wrapRotationToPiBounds(enemyObject.rotation - 0.2);
+				let projectileObject3 = createProjectile(gs, "swordSwing", enemyObject.xPosition, enemyObject.yPosition, rotation3, 0.1);
+				projectileObject3.sourceIsEnemy = true;
+			}
+			if (enemyObject.stateTimer > 100) {
+				enemyObject.state = "idle";
+				enemyObject.stateTimer = 0;
+			}
+		}
+		else if (enemyObject.state === "defeat") {
+			enemyObject.stateTimer += 1;
+			if (enemyObject.stateTimer > 60) {
+				enemyObject.toBeRemoved = true;
+			}
+		}
+		enemyObject.xPosition += enemyObject.xSpeed;
+		enemyObject.yPosition += enemyObject.ySpeed;
+		enemyObject.xSpeed *= 0.8;
+		enemyObject.ySpeed *= 0.8;
+
+		// Reduce stagger
+		if (enemyObject.state !== "stunned") {
+			enemyObject.stagger *= 0.97;
+		}
+		
+		// Change state on conditions
+		if (enemyObject.stagger > enemyObject.maxStagger && !enemyObject.defeated && enemyObject.state !== "stunned") {
+			enemyObject.state = "stunned";
+			enemyObject.stateTimer = 0;
+		}
+		if (enemyObject.defeated || enemyObject.health <= 0) {
+			enemyObject.defeated = true;
+			if (enemyObject.state !== "defeat") {
+				enemyObject.state = "defeat";
+				enemyObject.stateTimer = 0;
+			}
+		}
+	});
 	gs.projectileList.forEach(projectileObject => {
 		// Apply speed
 		projectileObject.xPosition += Math.cos(projectileObject.rotation) * projectileObject.speed;
@@ -1510,6 +1669,25 @@ let gameLogic = (gs) => {
 				// Check if player is defeated
 				if (playerObject.health <= 0) {
 					playerObject.defeated = true;
+				}
+				// Create hit effect
+				let effectObject = createEffect(gs, "hit", projectileObject.xPosition, projectileObject.yPosition);
+				// Remove projectile
+				projectileObject.toBeRemoved = true;
+				anyRemovals = true;
+			}
+		});
+		// Test collisions against enemies
+		gs.enemyList.forEach(enemyObject => {
+			// Check that the projectile is from a player, and collides with the enemy
+			if (!projectileObject.sourceIsEnemy && collisionTest(enemyObject, projectileObject)) {
+				// Subtract health from enemy
+				enemyObject.health -= 1;
+				// Add stagger to enemy
+				enemyObject.stagger += 3;
+				// Check if defeated
+				if (enemyObject.health <= 0) {
+					enemyObject.defeated = true;
 				}
 				// Create hit effect
 				let effectObject = createEffect(gs, "hit", projectileObject.xPosition, projectileObject.yPosition);
@@ -1532,6 +1710,11 @@ let gameLogic = (gs) => {
 			anyRemovals = true;
 		}
 	});
+	gs.enemyList.forEach(enemyObject => {
+		if (enemyObject.toBeRemoved) {
+			anyRemovals = true;
+		}
+	});
 	gs.itemList.forEach(itemObject => {
 		if (itemObject.toBeRemoved) {
 			anyRemovals = true;
@@ -1544,6 +1727,7 @@ let gameLogic = (gs) => {
 		gs.applianceList.filter(applianceObject => applianceObject.toBeRemoved).forEach(applianceObject => {removeAppliance(gs, applianceObject);});
 		gs.itemList.filter(itemObject => itemObject.toBeRemoved).forEach(itemObject => {removeItem(gs, itemObject);});
 		gs.effectList.filter(effectObject => effectObject.toBeRemoved).forEach(effectObject => {removeEffect(gs, effectObject);});
+		gs.enemyList.filter(enemyObject => enemyObject.toBeRemoved).forEach(enemyObject => {removeEnemy(gs, enemyObject);});
 	}
 }
 let transferItem = (gs, oldHolder, newHolder, item) => {
@@ -1571,6 +1755,18 @@ let transferItem = (gs, oldHolder, newHolder, item) => {
 		item.heldByAppliance = false;
 		item.holder = undefined;
 	}
+}
+let deterministicRandom = (gs) => {
+	return ((gs.frameCount * 167) % 100) / 100;
+}
+let wrapRotationToPiBounds = (rotation) => {
+	if (rotation > Math.PI) {
+		rotation -= Math.PI * 2;
+	}
+	if (rotation < -Math.PI) {
+		rotation += Math.PI * 2;
+	}
+	return rotation
 }
 
 let inputChanged = false;
