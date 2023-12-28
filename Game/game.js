@@ -295,6 +295,7 @@ let createPlayer = (gs, name, id, team) => {
 		yTarget: 0,
 		health: 10,
 		maxHealth: 10,
+		itemCooldown: 0,
 		holdingItem: false,
 		heldItem: undefined,
 		upPressed: false,
@@ -739,8 +740,8 @@ let init = () => {
 	safeMaterial = new THREE.MeshToonMaterial({color: 0x444444});
 	safeMaterialHighlight = new THREE.MeshToonMaterial({color: 0x555555});
 	enemy1Material = new THREE.MeshToonMaterial({color: 0x80c020});
-	enemy1AttackMaterial = new THREE.MeshToonMaterial({color: 0xa0d030});
-	enemy1StunnedMaterial = new THREE.MeshToonMaterial({color: 0xb0f850});
+	enemy1AttackMaterial = new THREE.MeshToonMaterial({color: 0x90d030});
+	enemy1StunnedMaterial = new THREE.MeshToonMaterial({color: 0xc0f970});
 	enemy1AngryMaterial = new THREE.MeshToonMaterial({color: 0xc0a030});
 
 	// Single use meshes
@@ -779,7 +780,7 @@ let initializeGameState = (gs) => {
 	//safe1.assignedTeam = 1;
 	//let safe2 = createAppliance(gs, "safe", 7, 0);
 	//safe2.assignedTeam = 2;
-	let newEnemy = createEnemy(gs, "enemy1", -2, -2);
+	let newEnemy = createEnemy(gs, "enemy1", 2, 15);
 }
 
 let currentView = "entry";
@@ -870,11 +871,24 @@ let createOverlayObject = (overlayType, gameObject) => {
 		ovEl.textContent = gameObject.name;
 		ovEl.classList.add("team" + gameObject.team);
 	}
+	else if (overlayType === "enemy_name") {
+		ovEl.textContent = gameObject.subType;
+	}
 	else if (overlayType === "player_health_bar") {
 		let healthBarInner = document.createElement("div");
 		healthBarInner.classList.add("health_bar_inner");
 		ovEl.classList.add("team" + gameObject.team);
 		ovEl.append(healthBarInner);
+	}
+	else if (overlayType === "enemy_health_bar") {
+		let healthBarInner = document.createElement("div");
+		healthBarInner.classList.add("health_bar_inner");
+		ovEl.append(healthBarInner);
+	}
+	else if (overlayType === "enemy_stagger_bar") {
+		let staggerBarInner = document.createElement("div");
+		staggerBarInner.classList.add("stagger_bar_inner");
+		ovEl.append(staggerBarInner);
 	}
 	gameObject.connectedOverlayObjects[overlayType] = newOverlayObject;
 	overlayList.push(newOverlayObject);
@@ -1095,6 +1109,9 @@ let removeUnneededOverlays = (gs) => {
 		if (connectedObjectType === "player") {
 			gameObjectList = gs.playerList;
 		}
+		else if (connectedObjectType === "enemy") {
+			gameObjectList = gs.enemyList;
+		}
 		// Put the other object list conditionals here...
 		else {
 			// No object list? not sure what can be done
@@ -1265,8 +1282,13 @@ let renderFrame = (gs) => {
 	// Actually render the 3d scene
 	renderer.render(scene, camera);
 	// Create overlays for all objects that need them
+	// Player overlays
 	createMissingOverlays("player_name", gs.playerList);
 	createMissingOverlays("player_health_bar", gs.playerList);
+	// Enemy overlays
+	createMissingOverlays("enemy_name", gs.enemyList);
+	createMissingOverlays("enemy_health_bar", gs.enemyList);
+	createMissingOverlays("enemy_stagger_bar", gs.enemyList);
 	// Remove unneeded overlays
 	removeUnneededOverlays(gs);
 	// Update overlays
@@ -1280,13 +1302,22 @@ let renderFrame = (gs) => {
 			overlayItem.xLast = coords.x;
 			overlayItem.yLast = coords.y;
 		}
-		if (overlayItem.overlayType === "player_health_bar") {
+		if (overlayItem.overlayType === "player_health_bar" || overlayItem.overlayType === "enemy_health_bar") {
 			let displayedHealth = overlayElement.style.getPropertyValue("--health");
 			let displayedMaxHealth = overlayElement.style.getPropertyValue("--max-health");
 			// Using != because the dom saves these as strings instead of numbers
 			if (overlayItem.connectedObject.health != displayedHealth || overlayItem.connectedObject.maxHealth != displayedMaxHealth) {
-				overlayElement.style.setProperty("--health", Math.max(0, overlayItem.connectedObject.health));
+				overlayElement.style.setProperty("--health", Math.min(Math.max(0, overlayItem.connectedObject.health), overlayItem.connectedObject.maxHealth));
 				overlayElement.style.setProperty("--max-health", overlayItem.connectedObject.maxHealth);
+			}
+		}
+		if (overlayItem.overlayType === "enemy_stagger_bar") {
+			let displayedStagger = overlayElement.style.getPropertyValue("--stagger");
+			let displayedMaxStagger = overlayElement.style.getPropertyValue("--max-stagger");
+			// Using != because the dom saves these as strings instead of numbers
+			if (overlayItem.connectedObject.stagger != displayedStagger || overlayItem.connectedObject.maxStagger != displayedMaxStagger) {
+				overlayElement.style.setProperty("--stagger", Math.min(Math.max(0, overlayItem.connectedObject.stagger), overlayItem.connectedObject.maxStagger));
+				overlayElement.style.setProperty("--max-stagger", overlayItem.connectedObject.maxStagger);
 			}
 		}
 	});
@@ -1469,6 +1500,9 @@ let gameLogic = (gs) => {
 		playerObject.xTarget = Math.round(playerObject.xPosition + Math.cos(playerObject.rotation));
 		playerObject.yTarget = Math.round(playerObject.yPosition + Math.sin(playerObject.rotation));
 
+		if (playerObject.itemCooldown > 0) {
+			playerObject.itemCooldown -= 1;
+		}
 		// World Interaction
 
 		if (playerObject.grabPressed) {
@@ -1513,7 +1547,8 @@ let gameLogic = (gs) => {
 				// Use ability
 				if (playerObject.releasedUse) {
 					// Defeated players cannot fire projectiles
-					if (!playerObject.defeated) {
+					// Player must not have cooldown remaining
+					if (!playerObject.defeated && playerObject.itemCooldown <= 0) {
 						let abilityType = playerObject.heldItem.subType;
 						let projectileType;
 						if (abilityType === "gun") {
@@ -1527,6 +1562,7 @@ let gameLogic = (gs) => {
 						}
 						let projectileObject = createProjectile(gs, projectileType, playerObject.xPosition, playerObject.yPosition, playerObject.rotation, 0.1);
 						projectileObject.sourcePlayer = playerObject;
+						playerObject.itemCooldown = 8;
 					}
 				}
 			}
@@ -1576,14 +1612,14 @@ let gameLogic = (gs) => {
 				enemyObject.targetPlayer.yPosition - enemyObject.yPosition,
 				enemyObject.targetPlayer.xPosition - enemyObject.xPosition
 			);
-			let xSpeedChange = Math.cos(angleToTarget) * 0.002;
-			let ySpeedChange = Math.sin(angleToTarget) * 0.002;
+			let xSpeedChange = Math.cos(angleToTarget) * 0.004;
+			let ySpeedChange = Math.sin(angleToTarget) * 0.004;
 			enemyObject.xSpeed += xSpeedChange;
 			enemyObject.ySpeed += ySpeedChange;
 			enemyObject.rotation = angleToTarget;
 			let xDist = Math.abs(enemyObject.targetPlayer.xPosition - enemyObject.xPosition);
 			let yDist = Math.abs(enemyObject.targetPlayer.yPosition - enemyObject.yPosition);
-			if (xDist < 2.5 && yDist < 2.5) {
+			if (xDist < 4.5 && yDist < 4.5) {
 				enemyObject.state = "attack";
 				enemyObject.stateTimer = 0;
 			}
@@ -1615,11 +1651,11 @@ let gameLogic = (gs) => {
 				let projectileObject1 = createProjectile(gs, "swordSwing", enemyObject.xPosition, enemyObject.yPosition, enemyObject.rotation, 0.1);
 				projectileObject1.sourceIsEnemy = true;
 				// Angled Left
-				let rotation2 = wrapRotationToPiBounds(enemyObject.rotation + 0.2);
+				let rotation2 = wrapRotationToPiBounds(enemyObject.rotation + 0.23);
 				let projectileObject2 = createProjectile(gs, "swordSwing", enemyObject.xPosition, enemyObject.yPosition, rotation2, 0.1);
 				projectileObject2.sourceIsEnemy = true;
 				// Angled Right
-				let rotation3 = wrapRotationToPiBounds(enemyObject.rotation - 0.2);
+				let rotation3 = wrapRotationToPiBounds(enemyObject.rotation - 0.23);
 				let projectileObject3 = createProjectile(gs, "swordSwing", enemyObject.xPosition, enemyObject.yPosition, rotation3, 0.1);
 				projectileObject3.sourceIsEnemy = true;
 			}
@@ -1641,7 +1677,7 @@ let gameLogic = (gs) => {
 
 		// Reduce stagger
 		if (enemyObject.state !== "stunned") {
-			enemyObject.stagger *= 0.97;
+			enemyObject.stagger *= 0.995;
 		}
 		
 		// Change state on conditions
@@ -1657,6 +1693,13 @@ let gameLogic = (gs) => {
 			}
 		}
 	});
+	// Spawn more enemies over time
+	if (gs.enemyList.length < 30 && gs.frameCount % 1400 === 0) {
+		let randAngle = (deterministicRandom(gs) * 2 - 1) * Math.PI;
+		let xSpot = Math.cos(randAngle) * 20;
+		let ySpot = Math.sin(randAngle) * 20;
+		let newEnemy = createEnemy(gs, "enemy1", xSpot, ySpot);
+	}
 	gs.projectileList.forEach(projectileObject => {
 		// Apply speed
 		projectileObject.xPosition += Math.cos(projectileObject.rotation) * projectileObject.speed;
@@ -1679,8 +1722,8 @@ let gameLogic = (gs) => {
 		});
 		// Test collisions against enemies
 		gs.enemyList.forEach(enemyObject => {
-			// Check that the projectile is from a player, and collides with the enemy
-			if (!projectileObject.sourceIsEnemy && collisionTest(enemyObject, projectileObject)) {
+			// Check that the projectile is from a player, and collides with the enemy, and the enemy isn't already defeated
+			if (!projectileObject.sourceIsEnemy && collisionTest(enemyObject, projectileObject) && !enemyObject.defeated) {
 				// Subtract health from enemy
 				enemyObject.health -= 1;
 				// Add stagger to enemy
@@ -1757,7 +1800,7 @@ let transferItem = (gs, oldHolder, newHolder, item) => {
 	}
 }
 let deterministicRandom = (gs) => {
-	return ((gs.frameCount * 167) % 100) / 100;
+	return (((gs.frameCount + 4301) * 2731) % 2903) / 2903;
 }
 let wrapRotationToPiBounds = (rotation) => {
 	if (rotation > Math.PI) {
