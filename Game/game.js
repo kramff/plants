@@ -118,6 +118,7 @@ let copyGameState = (gs) => {
 	fixReferences(gsNew.applianceList, "heldItem", gs.itemList, gsNew.itemList);
 	fixReferences(gsNew.itemList, "holder", gs.playerList, gsNew.playerList, gs.applianceList, gsNew.applianceList);
 	fixReferences(gsNew.projectileList, "sourcePlayer", gs.playerList, gsNew.playerList);
+	fixReferences(gsNew.enemyList, "targetPlayer", gs.playerList, gsNew.playerList);
 	return gsNew;
 }
 
@@ -226,7 +227,7 @@ let compareGameStates = (gs1, gs2) => {
 			if (object.subType !== matchingObject.subType) {comparisons.push(`projectile.subType diff ${object.subType} !== ${matchingObject.subType}`);}
 			if (object.xPosition !== matchingObject.xPosition) {comparisons.push(`projectile.xPosition diff ${object.xPosition} !== ${matchingObject.xPosition}`);}
 			if (object.yPosition !== matchingObject.yPosition) {comparisons.push(`projectile.yPosition diff ${object.yPosition} !== ${matchingObject.yPosition}`);}
-			if (object.sourcePlayer.id !== matchingObject.sourcePlayer.id) {comparisons.push(`projectile.sourcePlayer.id diff ${object.sourcePlayer.id} !== ${matchingObject.sourcePlayer.id}`);}
+			if (object.sourcePlayer?.id !== matchingObject.sourcePlayer?.id) {comparisons.push(`projectile.sourcePlayer.id diff ${object.sourcePlayer.id} !== ${matchingObject.sourcePlayer.id}`);}
 			if (object.rotation !== matchingObject.rotation) {comparisons.push(`projectile.rotation diff ${object.rotation} !== ${matchingObject.rotation}`);}
 			if (object.lifespan !== matchingObject.lifespan) {comparisons.push(`projectile.lifespan diff ${object.lifespan} !== ${matchingObject.lifespan}`);}
 		}
