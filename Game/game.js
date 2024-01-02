@@ -96,6 +96,7 @@ let createGameState = () => {
 		projectileList: [],
 		effectList: [],
 		enemyList: [],
+		plantList: [],
 		frameCount: 0,
 	}
 }
@@ -109,11 +110,13 @@ let copyGameState = (gs) => {
 	copyGameObjectList(gsNew, gs.projectileList, gsNew.projectileList, createProjectile);
 	copyGameObjectList(gsNew, gs.effectList, gsNew.effectList, createEffect);
 	copyGameObjectList(gsNew, gs.enemyList, gsNew.enemyList, createEnemy);
+	copyGameObjectList(gsNew, gs.plantList, gsNew.plantList, createPlant);
 	// Fix references - Change references from objects in old gamestate to objects in new gamestate
 	// player: heldItem
 	// appliance: heldItem
 	// item: holder
 	// projectile: sourcePlayer
+	// enemy: targetPlayer
 	fixReferences(gsNew.playerList, "heldItem", gs.itemList, gsNew.itemList);
 	fixReferences(gsNew.applianceList, "heldItem", gs.itemList, gsNew.itemList);
 	fixReferences(gsNew.itemList, "holder", gs.playerList, gsNew.playerList, gs.applianceList, gsNew.applianceList);
@@ -249,6 +252,18 @@ let compareGameStates = (gs1, gs2) => {
 		}
 		else {comparisons.push(`enemy in gs1 has no match in gs2 at index ${index}`);}
 	});
+	if (gs1.plantList.length !== gs2.plantList.length) {comparisons.push(`plantList.length diff ${gs1.plantList.length} !== ${gs2.plantList.length}`);}
+	gs1.plantList.map((object, index) => {
+		let matchingObject = gs2.plantList[index];
+		let hasMatch = matchingObject !== undefined;
+		if (hasMatch) {
+			if (object.subType !== matchingObject.subType) {comparisons.push(`plant.subType diff ${object.subType} !== ${matchingObject.subType}`);}
+			if (object.xPosition !== matchingObject.xPosition) {comparisons.push(`plant.xPosition diff ${object.xPosition} !== ${matchingObject.xPosition}`);}
+			if (object.yPosition !== matchingObject.yPosition) {comparisons.push(`plant.yPosition diff ${object.yPosition} !== ${matchingObject.yPosition}`);}
+			if (object.rotation !== matchingObject.rotation) {comparisons.push(`plant.rotation diff ${object.rotation} !== ${matchingObject.rotation}`);}
+		}
+		else {comparisons.push(`plant in gs1 has no match in gs2 at index ${index}`);}
+	});
 	comparisons = comparisons.flat(1);
 	// Any truthy value means there was a difference. (the truthy value would be a string)
 	let overallResult = comparisons.reduce((result, comparison) => {
@@ -283,6 +298,7 @@ let itemMeshList = [];
 let projectileMeshList = [];
 let effectMeshList = [];
 let enemyMeshList = [];
+let plantMeshList = [];
 
 let createPlayer = (gs, name, id, team) => {
 	let newPlayer = {
@@ -555,6 +571,13 @@ let createEnemyMesh = (enemyObject) => {
 }
 let removeEnemy = (gs, enemyObject) => {
 	gs.enemyList.splice(gs.enemyList.indexOf(enemyObject), 1);
+}
+
+let createPlant = () => {
+}
+let createPlantMesh = () => {
+}
+let removePlant () => {
 }
 
 let wDown = false;

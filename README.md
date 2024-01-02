@@ -168,9 +168,17 @@ The server is using the [ws library](https://github.com/websockets/ws) so it can
 
 ## Other Notes
 
+### Debugging with module syntax
+
 It has been harder to inspect and debug the game since moving to javascript module syntax. Not having global access to the modularized game state variables is tricky.
 
 To help, I created a "Hit Breakpoint" button that just hits a `debugger;` statement. However, this can't be used to inspect with the console while the game is running.
 
 - [ ] TODO: Try putting `currentGameState` and other important variables into global scope using this approach: [stack overflow link](https://stackoverflow.com/questions/74509829/how-to-debug-javascript-modules-using-the-browser-console)
+
+### Desync tool limit
+
+I'm not sure what the limit is, but after some number of frames (like 5,000 or so) the "Desync Eval Tool" stops working because the server crashes when you try it.
+
+The error is: "RangeError: Max payload size exceeded" so probably it can be split into pieces of 1,000 frames to prevent that.
 
