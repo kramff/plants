@@ -573,11 +573,11 @@ let removeEnemy = (gs, enemyObject) => {
 	gs.enemyList.splice(gs.enemyList.indexOf(enemyObject), 1);
 }
 
-let createPlant = () => {
+let createPlant = (gs, plantType, xPosition, yPosition) => {
 }
-let createPlantMesh = () => {
+let createPlantMesh = (plantObject) => {
 }
-let removePlant () => {
+let removePlant (gs, plantObject) => {
 }
 
 let wDown = false;
