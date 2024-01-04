@@ -85,6 +85,8 @@ let enemy1AttackMaterial;
 let enemy1StunnedMaterial;
 let enemy1AngryMaterial;
 
+let plant1Material;
+
 let sceneLight;
 let sceneLight2;
 
@@ -549,8 +551,6 @@ let createEnemy = (gs, enemyType, xPosition, yPosition) => {
 		targetPlayer: undefined,
 		stagger: 0,
 		maxStagger: 10,
-		connectedMesh: undefined,
-		connectedOverlayObjects: {},
 		defeated: false,
 		toBeRemoved: false,
 	};
@@ -574,10 +574,33 @@ let removeEnemy = (gs, enemyObject) => {
 }
 
 let createPlant = (gs, plantType, xPosition, yPosition) => {
+	let newPlant = {
+		type: "plant",
+		subtype: plantType,
+		connectedMesh: undefined,
+		connectedOverlayObjects: {},
+		xPosition: xPosition || 0,
+		yPosition: yPosition || 0,
+		rotation: 0,
+		toBeRemoved: false,
+	};
+	gs.plantList.push(newPlant);
+	return newPlant;
 }
 let createPlantMesh = (plantObject) => {
+	let newPlantMesh;
+	if (plantObject.subType === "plant1") {
+		newPlantMesh = new THREE.Mesh(cubeGeometry, plant1Material);
+	}
+	else {
+		newPlantMesh = new THREE.Mesh(cubeGeometry, plant1Material);
+	}
+	scene.add(newPlantMesh);
+	plantMeshList.push(newPlantMesh);
+	return newPlantMesh;
 }
-let removePlant (gs, plantObject) => {
+let removePlant = (gs, plantObject) => {
+	gs.plantList.splice(gs.plantList.indexOf(plantObject), 1);
 }
 
 let wDown = false;
@@ -767,6 +790,7 @@ let init = () => {
 	enemy1AttackMaterial = new THREE.MeshToonMaterial({color: 0x90d030});
 	enemy1StunnedMaterial = new THREE.MeshToonMaterial({color: 0xc0f970});
 	enemy1AngryMaterial = new THREE.MeshToonMaterial({color: 0xc0a030});
+	plant1Material = new THREE.MeshToonMaterial({color: 0x309010});
 
 	// Single use meshes
 	floorMesh = new THREE.Mesh(planeGeometry, floorMaterial);
@@ -805,6 +829,8 @@ let initializeGameState = (gs) => {
 	//let safe2 = createAppliance(gs, "safe", 7, 0);
 	//safe2.assignedTeam = 2;
 	let newEnemy = createEnemy(gs, "enemy1", 2, 15);
+
+	let newPlant = createPlant(gs, "plant1", -3, -4);
 }
 
 let currentView = "entry";
@@ -1167,6 +1193,7 @@ let renderFrame = (gs) => {
 	createMissingMeshes(gs.projectileList, createProjectileMesh);
 	createMissingMeshes(gs.effectList, createEffectMesh);
 	createMissingMeshes(gs.enemyList, createEnemyMesh);
+	createMissingMeshes(gs.plantList, createPlantMesh);
 	// Remove unused meshes
 	// Check that the connected object is in the game, and that the connected object is still actually connected
 	removeUnneededMeshes(playerMeshList, gs.playerList);
@@ -1175,6 +1202,7 @@ let renderFrame = (gs) => {
 	removeUnneededMeshes(projectileMeshList, gs.projectileList);
 	removeUnneededMeshes(effectMeshList, gs.effectList);
 	removeUnneededMeshes(enemyMeshList, gs.enemyList);
+	removeUnneededMeshes(plantMeshList, gs.plantList);
 	// Update rendering position, rotation, material, etc for all objects
 	gs.applianceList.forEach(applianceObject => {
 		let applianceMesh = applianceObject.connectedMesh;
@@ -1260,6 +1288,9 @@ let renderFrame = (gs) => {
 		else {
 			enemyMesh.material = enemy1Material;
 		}
+	});
+	gs.plantList.forEach(plantObject => {
+		let plantMesh = plantObject.connectedMesh;
 	});
 	let localPlayer = getLocalPlayer(gs);
 	let localPlayerMesh = localPlayer.connectedMesh;
@@ -1724,6 +1755,9 @@ let gameLogic = (gs) => {
 		let ySpot = Math.sin(randAngle) * 20;
 		let newEnemy = createEnemy(gs, "enemy1", xSpot, ySpot);
 	}
+	gs.plantList.forEach(plantObject => {
+		// Plants 
+	});
 	gs.projectileList.forEach(projectileObject => {
 		// Apply speed
 		projectileObject.xPosition += Math.cos(projectileObject.rotation) * projectileObject.speed;
