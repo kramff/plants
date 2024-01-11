@@ -73,6 +73,30 @@ let powderMaterial;
 let rockGeometry;
 let rockMaterial;
 
+let seedSamplerGeometry;
+let seedSamplerMaterial;
+
+let pollenSamplerGeometry;
+let pollenSamplerMaterial;
+
+let seedGeometry;
+let seedMaterial;
+
+let fertilizerGeometry;
+let fertilizerMaterial;
+
+let waterGeometry;
+let waterMaterial;
+
+let bloodGeometry;
+let bloodMaterial;
+
+let ichorGeometry;
+let ichorMaterial;
+
+let fireBombGeometry;
+let fireBombMaterial;
+
 let safeGeometry;
 let safeMaterial;
 let safeMaterialHighlight;
@@ -116,12 +140,14 @@ let copyGameState = (gs) => {
 	// Fix references - Change references from objects in old gamestate to objects in new gamestate
 	// player: heldItem
 	// appliance: heldItem
+	// plant: heldItem
 	// item: holder
 	// projectile: sourcePlayer
 	// enemy: targetPlayer
 	fixReferences(gsNew.playerList, "heldItem", gs.itemList, gsNew.itemList);
 	fixReferences(gsNew.applianceList, "heldItem", gs.itemList, gsNew.itemList);
-	fixReferences(gsNew.itemList, "holder", gs.playerList, gsNew.playerList, gs.applianceList, gsNew.applianceList);
+	fixReferences(gsNew.plantList, "heldItem", gs.itemList, gsNew.itemList);
+	fixReferences(gsNew.itemList, "holder", gs.playerList, gsNew.playerList, gs.applianceList, gsNew.applianceList, gs.plantList, gsNew.plantList);
 	fixReferences(gsNew.projectileList, "sourcePlayer", gs.playerList, gsNew.playerList);
 	fixReferences(gsNew.enemyList, "targetPlayer", gs.playerList, gsNew.playerList);
 	return gsNew;
@@ -144,22 +170,32 @@ let copyGameObjectList = (gsNew, sourceObjectList, targetObjectList, createObjFu
 	});
 }
 
-let fixReferences = (fixObjectList, referenceKey, oldReferenceList, newReferenceList, oldReferenceListB, newReferenceListB) => {
+let fixReferences = (fixObjectList, referenceKey, oldReferenceList, newReferenceList, oldReferenceListB, newReferenceListB, oldReferenceListC, newReferenceListC) => {
 	fixObjectList.forEach(gameObject => {
 		if (gameObject[referenceKey] !== undefined) {
 			let oldReferenceObject = gameObject[referenceKey];
 			let useListBs = false;
+			let useListCs = false;
 			if (gameObject.type === "item") {
-				// Item can either have a player holder or appliance holder
-				// Main list: players, B list: appliances
+				// Item can either have a player holder or appliance holder or plant holder
+				// Main list: players, B list: appliances, C list: plants
 				if (gameObject.heldByAppliance) {
 					useListBs = true;
+				}
+				else if (gameObject.heldByPlant) {
+					useListCs = true;
 				}
 			}
 			if (useListBs) {
 				let oldReferenceIndex = oldReferenceListB.indexOf(oldReferenceObject);
 				// Assumes the lists match order
 				let newReferenceObject = newReferenceListB[oldReferenceIndex];
+				gameObject[referenceKey] = newReferenceObject;
+			}
+			else if (useListCs) {
+				let oldReferenceIndex = oldReferenceListC.indexOf(oldReferenceObject);
+				// Assumes the lists match order
+				let newReferenceObject = newReferenceListC[oldReferenceIndex];
 				gameObject[referenceKey] = newReferenceObject;
 			}
 			else {
@@ -412,6 +448,8 @@ let createItem = (gs, itemType) => {
 		holder: undefined,
 		heldByPlayer: false,
 		heldByAppliance: false,
+		heldByPlant: false,
+		extraInfo: {},
 		connectedMesh: undefined,
 		connectedOverlayObjects: {},
 		fixedRotation: true,
@@ -423,6 +461,9 @@ let createItem = (gs, itemType) => {
 		newItem.fixedRotation = false;
 		newItem.initialRotation = - Math.PI / 2;
 		newItem.hasAbility = true;
+	}
+	if (itemType === "seed" || itemType === "pollenSampler") {
+		newItem.extraInfo.genome = getBlankGenome();
 	}
 	gs.itemList.push(newItem);
 	return newItem;
@@ -450,6 +491,30 @@ let createItemMesh = (itemObject) => {
 	}
 	else if (itemObject.subType === "powder") {
 		newItemMesh = new THREE.Mesh(powderGeometry, powderMaterial);
+	}
+	else if (itemObject.subType === "seedSampler") {
+		newItemMesh = new THREE.Mesh(seedSamplerGeometry, seedSamplerMaterial);
+	}
+	else if (itemObject.subType === "pollenSampler") {
+		newItemMesh = new THREE.Mesh(pollenSamplerGeometry, pollenSamplerMaterial);
+	}
+	else if (itemObject.subType === "seed") {
+		newItemMesh = new THREE.Mesh(seedGeometry, seedMaterial);
+	}
+	else if (itemObject.subType === "fertilizer") {
+		newItemMesh = new THREE.Mesh(fertilizerGeometry, fertilizerMaterial);
+	}
+	else if (itemObject.subType === "water") {
+		newItemMesh = new THREE.Mesh(waterGeometry, waterMaterial);
+	}
+	else if (itemObject.subType === "blood") {
+		newItemMesh = new THREE.Mesh(bloodGeometry, bloodMaterial);
+	}
+	else if (itemObject.subType === "ichor") {
+		newItemMesh = new THREE.Mesh(ichorGeometry, ichorMaterial);
+	}
+	else if (itemObject.subType === "fireBomb") {
+		newItemMesh = new THREE.Mesh(fireBombGeometry, fireBombMaterial);
 	}
 	else {
 		console.log("item type missing: " + itemObject.subType);
@@ -573,15 +638,33 @@ let removeEnemy = (gs, enemyObject) => {
 	gs.enemyList.splice(gs.enemyList.indexOf(enemyObject), 1);
 }
 
+let getBlankGenome = () => {
+	return {
+		geneticPower: 10,
+		makesSword: false,
+		makesFireBomb: false,
+	}
+}
+
 let createPlant = (gs, plantType, xPosition, yPosition) => {
 	let newPlant = {
 		type: "plant",
 		subtype: plantType,
+		regularMat: undefined,
+		highlightMat: undefined,
 		connectedMesh: undefined,
 		connectedOverlayObjects: {},
 		xPosition: xPosition || 0,
 		yPosition: yPosition || 0,
 		rotation: 0,
+		growth: 0,
+		maxGrowth: 10,
+		power: 0,
+		maxPower: 10,
+		doneGrowing: false,
+		genome: getBlankGenome(),
+		holdingItem: false,
+		heldItem: undefined,
 		toBeRemoved: false,
 	};
 	gs.plantList.push(newPlant);
@@ -764,6 +847,16 @@ let init = () => {
 	powderGeometry = new THREE.CapsuleGeometry(0.1, 0.2, 2, 7);
 	hitEffectGeometry = new THREE.RingGeometry(0.2, 0.5, 14);
 
+	powderGeometry = new THREE.CapsuleGeometry(0.1, 0.2, 2, 7);
+	seedSamplerGeometry = new THREE.CapsuleGeometry(0.1, 0.2, 2, 7);
+	pollenSamplerGeometry = new THREE.CapsuleGeometry(0.1, 0.2, 2, 7);
+	seedGeometry = new THREE.CapsuleGeometry(0.1, 0.2, 2, 7);
+	fertilizerGeometry = new THREE.CapsuleGeometry(0.1, 0.2, 2, 7);
+	waterGeometry = new THREE.CapsuleGeometry(0.1, 0.2, 2, 7);
+	bloodGeometry = new THREE.CapsuleGeometry(0.1, 0.2, 2, 7);
+	ichorGeometry = new THREE.CapsuleGeometry(0.1, 0.2, 2, 7);
+	fireBombGeometry = new THREE.CapsuleGeometry(0.1, 0.2, 2, 7);
+
 	// Materials
 	playerMaterial = new THREE.MeshToonMaterial({color: 0x22ff22});
 	playerTeam1Material = new THREE.MeshToonMaterial({color: 0xff7777});
@@ -786,15 +879,25 @@ let init = () => {
 	//rockMaterial = new THREE.MeshToonMaterial({color: 0x994433});
 	safeMaterial = new THREE.MeshToonMaterial({color: 0x444444});
 	safeMaterialHighlight = new THREE.MeshToonMaterial({color: 0x555555});
-	enemy1Material = new THREE.MeshToonMaterial({color: 0x80c020});
-	enemy1AttackMaterial = new THREE.MeshToonMaterial({color: 0x90d030});
-	enemy1StunnedMaterial = new THREE.MeshToonMaterial({color: 0xc0f970});
-	enemy1AngryMaterial = new THREE.MeshToonMaterial({color: 0xc0a030});
+	enemy1Material = new THREE.MeshToonMaterial({color: 0x707070});
+	enemy1AttackMaterial = new THREE.MeshToonMaterial({color: 0x909070});
+	enemy1StunnedMaterial = new THREE.MeshToonMaterial({color: 0x8090a0});
+	enemy1AngryMaterial = new THREE.MeshToonMaterial({color: 0xa09080});
 	plant1Material = new THREE.MeshToonMaterial({color: 0x309010});
+	// More materials 2
+	seedSamplerMaterial = new THREE.MeshToonMaterial({color: 0x50a070});
+	pollenSamplerMaterial = new THREE.MeshToonMaterial({color: 0xd0a010});
+	seedMaterial = new THREE.MeshToonMaterial({color: 0xa08020});
+	fertilizerMaterial = new THREE.MeshToonMaterial({color: 0x305020});
+	waterMaterial = new THREE.MeshToonMaterial({color: 0x6080f8});
+	bloodMaterial = new THREE.MeshToonMaterial({color: 0xe03040});
+	ichorMaterial = new THREE.MeshToonMaterial({color: 0xf0f090});
+	fireBombMaterial = new THREE.MeshToonMaterial({color: 0xf84010});
 
 	// Single use meshes
 	floorMesh = new THREE.Mesh(planeGeometry, floorMaterial);
-	floorMesh.position.set(0, 0, -0.5);
+	floorMesh.position.set(1, 0, -0.5);
+	floorMesh.scale.set(1.5, 1.5, 1);
 	scene.add(floorMesh);
 
 	// Lights
@@ -811,18 +914,25 @@ let init = () => {
 window.addEventListener('load', init);
 
 let initializeGameState = (gs) => {
-	let listOfItems = ["sword", "gun", "ball", "rock", "sword", "gun", "ball", "herb", "powder"];
+	let listOfItems = ["sword", "seedSampler", "pollenSampler", "seed", "fertilizer", "water", "blood", "ichor", "fireBomb"];
 
-	for (let i = 0; i < 9; i++) {
-		let newSupply = createAppliance(gs, "supply", i * 2 - 6, i - 2);
+	for (let i = 0; i < listOfItems.length; i++) {
+		let newSupply;
+		if (i < 5) {
+			newSupply = createAppliance(gs, "supply", i * 3 - 5, 2);
+		}
+		else {
+			newSupply = createAppliance(gs, "supply", (i - 5) * 3 - 5, -1);
+		}
+
 		let newItem = createItem(gs, listOfItems[i]);
 		transferItem(gs, undefined, newSupply, newItem);
 	}
-	for (let i = 0; i < 6; i++) {
-		let newTable = createAppliance(gs, "table", i - 3, -4);
+	for (let i = 0; i < 5; i++) {
+		let newTable = createAppliance(gs, "table", i - 5, -4);
 	}
-	for (let i = 0; i < 6; i++) {
-		let newTable = createAppliance(gs, "table", i + 1, -3);
+	for (let i = 0; i < 5; i++) {
+		let newTable = createAppliance(gs, "table", i + 3, -4);
 	}
 	//let safe1 = createAppliance(gs, "safe", -7, 0);
 	//safe1.assignedTeam = 1;
@@ -830,7 +940,10 @@ let initializeGameState = (gs) => {
 	//safe2.assignedTeam = 2;
 	let newEnemy = createEnemy(gs, "enemy1", 2, 15);
 
-	let newPlant = createPlant(gs, "plant1", -3, -4);
+	let newPlant1 = createPlant(gs, "plant1", -4, 5);
+	newPlant1.genome.makesSword = true;
+	let newPlant2 = createPlant(gs, "plant1", 6, 5);
+	newPlant2.genome.makesFireBomb = true;
 }
 
 let currentView = "entry";
@@ -1291,6 +1404,8 @@ let renderFrame = (gs) => {
 	});
 	gs.plantList.forEach(plantObject => {
 		let plantMesh = plantObject.connectedMesh;
+		plantMesh.position.x = plantObject.xPosition;
+		plantMesh.position.y = plantObject.yPosition;
 	});
 	let localPlayer = getLocalPlayer(gs);
 	let localPlayerMesh = localPlayer.connectedMesh;
