@@ -226,6 +226,51 @@ p {
 	background-color: white;
 }
 
+.ov_item.plant_name {
+	transform: translate(var(--x-pos), var(--y-pos)) translate(-30px, -53px);
+	width: 60px;
+	text-align: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	white-space: nowrap;
+	font-size: 10px;
+	color: #99f199;
+	opacity: 0.7;
+}
+.ov_item.plant_growth_bar {
+	transform: translate(var(--x-pos), var(--y-pos)) translate(-20px, -40px);
+	width: 40px;
+	height: 4px;
+	background-color: #8a9b44;
+}
+.ov_item.plant_growth_bar .growth_bar_inner {
+	position: absolute;
+	left: 0;
+	top: 0;
+	height: 100%;
+	width: 100%;
+	transform-origin: left;
+	transform: scaleX(calc(100% * var(--growth) / var(--max-growth)));
+	background-color: #18c30d;
+}
+.ov_item.plant_power_bar {
+	transform: translate(var(--x-pos), var(--y-pos)) translate(-20px, -35px);
+	width: 40px;
+	height: 4px;
+	background-color: #9b8044;
+}
+.ov_item.plant_power_bar .power_bar_inner {
+	position: absolute;
+	left: 0;
+	top: 0;
+	height: 100%;
+	width: 100%;
+	transform-origin: left;
+	transform: scaleX(calc(100% * var(--power) / var(--max-power)));
+	background-color: #e7e00a;
+}
+
 .game_ui {
 	position: absolute;
 	left: 0;

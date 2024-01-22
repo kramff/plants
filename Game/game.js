@@ -231,7 +231,7 @@ let compareGameStates = (gs1, gs2) => {
 		let matchingObject = gs2.itemList[index];
 		let hasMatch = matchingObject !== undefined;
 		if (hasMatch) {
-			if (object.subType !== matchingObject.subType) {comparisons.push(`item.subtype diff ${object.subtype} !== ${matchingObject.subtype}`);}
+			if (object.subType !== matchingObject.subType) {comparisons.push(`item.subType diff ${object.subType} !== ${matchingObject.subType}`);}
 		}
 		else {comparisons.push(`item in gs1 has no match in gs2 at index ${index}`);}
 	});
@@ -649,7 +649,7 @@ let getBlankGenome = () => {
 let createPlant = (gs, plantType, xPosition, yPosition) => {
 	let newPlant = {
 		type: "plant",
-		subtype: plantType,
+		subType: plantType,
 		regularMat: undefined,
 		highlightMat: undefined,
 		connectedMesh: undefined,
@@ -1034,14 +1034,14 @@ let createOverlayObject = (overlayType, gameObject) => {
 		ovEl.textContent = gameObject.name;
 		ovEl.classList.add("team" + gameObject.team);
 	}
-	else if (overlayType === "enemy_name") {
-		ovEl.textContent = gameObject.subType;
-	}
 	else if (overlayType === "player_health_bar") {
 		let healthBarInner = document.createElement("div");
 		healthBarInner.classList.add("health_bar_inner");
 		ovEl.classList.add("team" + gameObject.team);
 		ovEl.append(healthBarInner);
+	}
+	else if (overlayType === "enemy_name") {
+		ovEl.textContent = gameObject.subType;
 	}
 	else if (overlayType === "enemy_health_bar") {
 		let healthBarInner = document.createElement("div");
@@ -1052,6 +1052,19 @@ let createOverlayObject = (overlayType, gameObject) => {
 		let staggerBarInner = document.createElement("div");
 		staggerBarInner.classList.add("stagger_bar_inner");
 		ovEl.append(staggerBarInner);
+	}
+	else if (overlayType === "plant_name") {
+		ovEl.textContent = gameObject.subType;
+	}
+	else if (overlayType === "plant_growth_bar") {
+		let growthBarInner = document.createElement("div");
+		growthBarInner.classList.add("growth_bar_inner");
+		ovEl.append(growthBarInner);
+	}
+	else if (overlayType === "plant_power_bar") {
+		let powerBarInner = document.createElement("div");
+		powerBarInner.classList.add("power_bar_inner");
+		ovEl.append(powerBarInner);
 	}
 	gameObject.connectedOverlayObjects[overlayType] = newOverlayObject;
 	overlayList.push(newOverlayObject);
@@ -1356,6 +1369,10 @@ let renderFrame = (gs) => {
 			itemMesh.position.set(0, 0, 1);
 			itemMesh.rotation.z = itemObject.initialRotation;
 		}
+		else if (itemObject.heldByPlant) {
+			itemMesh.position.set(0, 0, 1);
+			itemMesh.rotation.z = itemObject.initialRotation;
+		}
 		// Change material when progress is made
 		if (itemObject.processed) {
 			itemMesh.material = itemMaterial2;
@@ -1459,6 +1476,10 @@ let renderFrame = (gs) => {
 	createMissingOverlays("enemy_name", gs.enemyList);
 	createMissingOverlays("enemy_health_bar", gs.enemyList);
 	createMissingOverlays("enemy_stagger_bar", gs.enemyList);
+	// Plant overlays
+	createMissingOverlays("plant_name", gs.plantList);
+	createMissingOverlays("plant_growth_bar", gs.plantList);
+	createMissingOverlays("plant_power_bar", gs.plantList);
 	// Remove unneeded overlays
 	removeUnneededOverlays(gs);
 	// Update overlays
@@ -1488,6 +1509,24 @@ let renderFrame = (gs) => {
 			if (overlayItem.connectedObject.stagger != displayedStagger || overlayItem.connectedObject.maxStagger != displayedMaxStagger) {
 				overlayElement.style.setProperty("--stagger", Math.min(Math.max(0, overlayItem.connectedObject.stagger), overlayItem.connectedObject.maxStagger));
 				overlayElement.style.setProperty("--max-stagger", overlayItem.connectedObject.maxStagger);
+			}
+		}
+		if (overlayItem.overlayType === "plant_growth_bar") {
+			let displayedGrowth = overlayElement.style.getPropertyValue("--growth");
+			let displayedMaxGrowth = overlayElement.style.getPropertyValue("--max-growth");
+			// Using != because the dom saves these as strings instead of numbers
+			if (overlayItem.connectedObject.growth != displayedGrowth || overlayItem.connectedObject.maxGrowth != displayedMaxGrowth) {
+				overlayElement.style.setProperty("--growth", Math.min(Math.max(0, overlayItem.connectedObject.growth), overlayItem.connectedObject.maxGrowth));
+				overlayElement.style.setProperty("--max-growth", overlayItem.connectedObject.maxGrowth);
+			}
+		}
+		if (overlayItem.overlayType === "plant_power_bar") {
+			let displayedPower = overlayElement.style.getPropertyValue("--power");
+			let displayedMaxPower = overlayElement.style.getPropertyValue("--max-power");
+			// Using != because the dom saves these as strings instead of numbers
+			if (overlayItem.connectedObject.power != displayedPower || overlayItem.connectedObject.maxPower != displayedMaxPower) {
+				overlayElement.style.setProperty("--power", Math.min(Math.max(0, overlayItem.connectedObject.power), overlayItem.connectedObject.maxPower));
+				overlayElement.style.setProperty("--max-power", overlayItem.connectedObject.maxPower);
 			}
 		}
 	});
@@ -1689,8 +1728,8 @@ let gameLogic = (gs) => {
 							}
 							else if (!playerObject.holdingItem && applianceObject.holdingItem) {
 								// Pick up copy of item
-								let newItemCopy = createItem(gs, applianceObject.heldItem.subType);
-								transferItem(gs, undefined, playerObject, newItemCopy);
+								let newItem = createItem(gs, "sword");
+								transferItem(gs, undefined, plantObject, newItem);
 							}
 						}
 						else {
@@ -1872,6 +1911,15 @@ let gameLogic = (gs) => {
 	}
 	gs.plantList.forEach(plantObject => {
 		// Plants 
+		// Grow over time
+		if (!plantObject.doneGrowing) {
+			plantObject.growth += 0.005;
+			// At full growth, create product item as held item
+			if (plantObject.growth > plantObject.maxGrowth) {
+				let newItemCopy = createItem(gs, applianceObject.heldItem.subType);
+				transferItem(gs, undefined, playerObject, newItemCopy);
+			}
+		}
 	});
 	gs.projectileList.forEach(projectileObject => {
 		// Apply speed
@@ -1957,10 +2005,17 @@ let transferItem = (gs, oldHolder, newHolder, item) => {
 		if (newHolder.type === "player") {
 			item.heldByPlayer = true;
 			item.heldByAppliance = false;
+			item.heldByPlant = false;
 		}
-		else {
+		else (newHolder.type === "appliance") {
 			item.heldByPlayer = false;
 			item.heldByAppliance = true;
+			item.heldByPlant = false;
+		}
+		else (newHolder.type === "plant") {
+			item.heldByPlayer = false;
+			item.heldByAppliance = false;
+			item.heldByPlant = true;
 		}
 		item.holder = newHolder;
 	}
@@ -1969,6 +2024,7 @@ let transferItem = (gs, oldHolder, newHolder, item) => {
 		item.toBeRemoved = true;
 		item.heldByPlayer = false;
 		item.heldByAppliance = false;
+		item.heldByPlant = false;
 		item.holder = undefined;
 	}
 }
