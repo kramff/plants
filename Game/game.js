@@ -1729,7 +1729,7 @@ let gameLogic = (gs) => {
 							else if (!playerObject.holdingItem && applianceObject.holdingItem) {
 								// Pick up copy of item
 								let newItem = createItem(gs, "sword");
-								transferItem(gs, undefined, plantObject, newItem);
+								transferItem(gs, undefined, playerObject, newItem);
 							}
 						}
 						else {
@@ -1916,8 +1916,8 @@ let gameLogic = (gs) => {
 			plantObject.growth += 0.005;
 			// At full growth, create product item as held item
 			if (plantObject.growth > plantObject.maxGrowth) {
-				let newItemCopy = createItem(gs, applianceObject.heldItem.subType);
-				transferItem(gs, undefined, playerObject, newItemCopy);
+				let newItemCopy = createItem(gs, "sword");
+				transferItem(gs, undefined, plantObject, newItemCopy);
 			}
 		}
 	});
@@ -2007,12 +2007,12 @@ let transferItem = (gs, oldHolder, newHolder, item) => {
 			item.heldByAppliance = false;
 			item.heldByPlant = false;
 		}
-		else (newHolder.type === "appliance") {
+		else if (newHolder.type === "appliance") {
 			item.heldByPlayer = false;
 			item.heldByAppliance = true;
 			item.heldByPlant = false;
 		}
-		else (newHolder.type === "plant") {
+		else if (newHolder.type === "plant") {
 			item.heldByPlayer = false;
 			item.heldByAppliance = false;
 			item.heldByPlant = true;

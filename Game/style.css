@@ -242,7 +242,7 @@ p {
 	transform: translate(var(--x-pos), var(--y-pos)) translate(-20px, -40px);
 	width: 40px;
 	height: 4px;
-	background-color: #8a9b44;
+	background-color: #dee5c2;
 }
 .ov_item.plant_growth_bar .growth_bar_inner {
 	position: absolute;
