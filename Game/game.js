@@ -662,6 +662,7 @@ let createPlant = (gs, plantType, xPosition, yPosition) => {
 		power: 0,
 		maxPower: 10,
 		doneGrowing: false,
+		producedItem: false,
 		genome: getBlankGenome(),
 		holdingItem: false,
 		heldItem: undefined,
@@ -1717,6 +1718,7 @@ let gameLogic = (gs) => {
 		if (playerObject.grabPressed) {
 			if (playerObject.releasedGrab) {
 				// Grab input: try to grab or put down an item
+				// Grab from appliances
 				gs.applianceList.forEach((applianceObject) => {
 					if (playerObject.xTarget === applianceObject.xPosition && playerObject.yTarget === applianceObject.yPosition) {
 						// Supply appliances - copy item when picking up, delete item when putting down, never remove item from supply
@@ -1741,6 +1743,16 @@ let gameLogic = (gs) => {
 								// Pick up object
 								transferItem(gs, applianceObject, playerObject, applianceObject.heldItem);
 							}
+						}
+					}
+				});
+				// Grab from plants and interact with specific items
+				gs.plantList.forEach(plantObject => {
+					if (playerObject.xTarget === plantObject.xPosition && playerObject.yTarget === plantObject.yPosition) {
+						// Can only take from plant, not put arbitrary items back down
+						if (!playerObject.holdingItem && plantObject.holdingItem) {
+							// Pick up object
+							transferItem(gs, plantObject, playerObject, plantObject.heldItem);
 						}
 					}
 				});
@@ -1913,9 +1925,13 @@ let gameLogic = (gs) => {
 		// Plants 
 		// Grow over time
 		if (!plantObject.doneGrowing) {
-			plantObject.growth += 0.005;
+			// About 30 seconds?
+			//plantObject.growth += 0.005;
+			plantObject.growth += 0.1;
 			// At full growth, create product item as held item
-			if (plantObject.growth > plantObject.maxGrowth) {
+			if (!plantObject.producedItem && !plantObject.holdingItem && plantObject.growth > plantObject.maxGrowth) {
+				plantObject.producedItem = true;
+				plantObject.doneGrowing = true;
 				let newItemCopy = createItem(gs, "sword");
 				transferItem(gs, undefined, plantObject, newItemCopy);
 			}
