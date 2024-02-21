@@ -457,7 +457,7 @@ let createItem = (gs, itemType) => {
 		hasAbility: false,
 		toBeRemoved: false,
 	};
-	if (itemType === "sword" || itemType === "gun" || itemType === "ball") {
+	if (itemType === "sword" || itemType === "gun" || itemType === "ball" || itemType === "fireBomb") {
 		newItem.fixedRotation = false;
 		newItem.initialRotation = - Math.PI / 2;
 		newItem.hasAbility = true;
@@ -556,6 +556,9 @@ let createProjectileMesh = (projectileObject) => {
 	}
 	else if (projectileObject.subType === "swordSwing") {
 		newProjectileMesh = new THREE.Mesh(swordGeometry, swordMaterial);
+	}
+	else if (projectileObject.subType === "fireBombToss") {
+		newProjectileMesh = new THREE.Mesh(fireBombGeometry, fireBombMaterial);
 	}
 	else {
 		console.log("projectile type missing: " + projectileObject.subType);
@@ -1730,7 +1733,7 @@ let gameLogic = (gs) => {
 							}
 							else if (!playerObject.holdingItem && applianceObject.holdingItem) {
 								// Pick up copy of item
-								let newItem = createItem(gs, "sword");
+								let newItem = createItem(gs, applianceObject.heldItem.subType);
 								transferItem(gs, undefined, playerObject, newItem);
 							}
 						}
@@ -1780,6 +1783,9 @@ let gameLogic = (gs) => {
 						}
 						else if (abilityType === "ball") {
 							projectileType = "thrownBall";
+						}
+						else if (abilityType === "fireBomb") {
+							projectileType = "fireBombToss";
 						}
 						let projectileObject = createProjectile(gs, projectileType, playerObject.xPosition, playerObject.yPosition, playerObject.rotation, 0.1);
 						projectileObject.sourcePlayer = playerObject;
